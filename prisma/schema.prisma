@@ -1,0 +1,120 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+model Student {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String @db.VarChar(60)
+  email    String @unique @db.VarChar(60)
+  password String @db.VarChar(60)
+  age      Int?   @db.SmallInt
+
+  token String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  courses Course[]
+
+  @@map("students")
+}
+
+model Admin {
+  id       String @id @default(uuid()) @db.Uuid
+  name     String @db.VarChar(20)
+  password String @db.VarChar(50)
+
+  @@map("admin")
+}
+
+enum Level {
+  ADVANCED
+  INTERMEDIATE
+  BASIC
+}
+
+model Course {
+  id              String @id @default(uuid()) @db.Uuid
+  name            String @db.VarChar(100)
+  description     String @db.VarChar(255)
+  workload        Int    @db.SmallInt
+  difficultyLevel Level
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @map("updated_at")
+
+  topics  Topic[]
+  modules Module[]
+
+  idStudent String?  @map("id_student") @db.Uuid
+  student   Student? @relation(fields: [idStudent], references: [id])
+
+  @@map("courses")
+}
+
+model Topic {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(50)
+
+  idCourse String @map("id_course") @db.Uuid
+  course   Course @relation(fields: [idCourse], references: [id])
+
+  idModule String @map("id_module") @db.Uuid
+  module   Module @relation(fields: [idModule], references: [id])
+
+  idExercise String   @map("id_exercise") @db.Uuid
+  exercise   Exercise @relation(fields: [idExercise], references: [id])
+
+  @@map("topics")
+}
+
+model Module {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now())
+
+  idCourse String @map("id_course") @db.Uuid
+  course   Course @relation(fields: [idCourse], references: [id])
+
+  topics    Topic[]
+  classes   Class[]
+  exercises Exercise[]
+
+  @@map("modules")
+}
+
+model Exercise {
+  id          String @id @default(uuid()) @db.Uuid
+  description String @db.VarChar(255)
+  answers     String @db.VarChar(255)
+  rightAnswer String @map("right_answer") @db.VarChar(255)
+
+  topics Topic[]
+
+  idModule String @map("id_module") @db.Uuid
+  modules  Module @relation(fields: [idModule], references: [id])
+
+  @@map("exercises")
+}
+
+model Class {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(100)
+
+  idModule String @map("id_module") @db.Uuid
+  module   Module @relation(fields: [idModule], references: [id])
+
+  @@map("classes")
+}
